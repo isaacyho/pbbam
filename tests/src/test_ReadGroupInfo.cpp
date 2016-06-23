@@ -79,45 +79,45 @@ TEST(ReadGroupInfoTest, SequencingChemistryOk)
         }
     }
 
-    { // S/P1-C1/beta
-        const vector<string> sequencingKits { "100-619-400", "100-711-600" };
-        ReadGroupInfo rg("SP1C1");
-        rg.BindingKit("100-619-300");
-        rg.BasecallerVersion("3.0");
-        for (const string& sk : sequencingKits) {
-            rg.SequencingKit(sk);
-            EXPECT_EQ("S/P1-C1/beta", rg.SequencingChemistry());
-        }
+    {   // S/P1-C1/beta
+        const string& chem = "S/P1-C1/beta";
+        EXPECT_EQ(chem, ReadGroupInfo::SequencingChemistryFromTriple("100-619-300","100-620-000","3.0"));
+        EXPECT_EQ(chem, ReadGroupInfo::SequencingChemistryFromTriple("100-619-300","100-620-000","3.1"));
+
+        ReadGroupInfo rg("dummy");
+        rg.BindingKit("100-619-300")
+          .SequencingKit("100-620-000")
+          .BasecallerVersion("3.0");
+        EXPECT_EQ(chem, rg.SequencingChemistry());
     }
 
-    // basecaller 3.1.x
-    { 
-        const vector<string> sequencingKits { "100-619-400", "100-711-600", "100-620-000" };
-        ReadGroupInfo rg("3.1");
-        rg.BindingKit("100-619-300");
-        rg.BasecallerVersion("3.1.0.171835");
-        for (const string& sk : sequencingKits) {
-            rg.SequencingKit(sk);
-            EXPECT_EQ("S/P1-C1", rg.SequencingChemistry());
-        }
+    {   // S/P1-C1.1 (Echidna)
+        const string& chem = "S/P1-C1.1";
+        EXPECT_EQ(chem, ReadGroupInfo::SequencingChemistryFromTriple("100-619-300","100-867-300","3.1"));
+
+        ReadGroupInfo rg("dummy");
+        rg.BindingKit("100-619-300")
+          .SequencingKit("100-867-300")
+          .BasecallerVersion("3.1");
+        EXPECT_EQ(chem, rg.SequencingChemistry());
     }
+
 }
 
 TEST(ReadGroupInfoTest, SequencingChemistryThrowsOnBadTriple)
 {
     try {
-        ReadGroupInfo rg("BAD");
-        rg.BindingKit("100372700");
-        rg.SequencingKit("100-619-400");
-        rg.BasecallerVersion("2.0");
-        //EXPECT_THROW(rg.SequencingChemistry(), InvalidSequencingChemistryException);
+        ReadGroupInfo rg("dummy");
+        rg.BindingKit("100-619-300")
+          .SequencingKit("100-867-300")
+          .BasecallerVersion("3.199.dummy");   
+        const string chem = rg.SequencingChemistry();
+        (void)chem;
+
     } catch (InvalidSequencingChemistryException& e) {
-        EXPECT_EQ(string("100372700"),   e.BindingKit());
-        EXPECT_EQ(string("100-619-400"), e.SequencingKit());
-        EXPECT_EQ(string("2.0"),         e.BasecallerVersion());
+        EXPECT_EQ("100-619-300", e.BindingKit());
+        EXPECT_EQ("100-867-300", e.SequencingKit());
+        EXPECT_EQ("3.199.dummy", e.BasecallerVersion());
     }
+    //EXPECT_THROW(rg.SequencingChemistry(), InvalidSequencingChemistryException);
 }
-
-
-
-
